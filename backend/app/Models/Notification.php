@@ -19,6 +19,10 @@ class Notification extends Model
         'sent_at',
         'read_at',
         'error_message',
+        'attempts',
+        'max_attempts',
+        'last_attempt_at',
+        'next_attempt_at',
     ];
 
     protected function casts(): array
@@ -27,6 +31,10 @@ class Notification extends Model
             'scheduled_at' => 'datetime',
             'sent_at' => 'datetime',
             'read_at' => 'datetime',
+            'last_attempt_at' => 'datetime',
+            'next_attempt_at' => 'datetime',
+            'attempts' => 'integer',
+            'max_attempts' => 'integer',
         ];
     }
 
