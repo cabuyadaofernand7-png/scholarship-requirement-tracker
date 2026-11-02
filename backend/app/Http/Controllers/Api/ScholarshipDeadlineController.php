@@ -8,11 +8,21 @@ use App\Models\Notification;
 use App\Models\ScholarshipProgram;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 class ScholarshipDeadlineController extends Controller
 {
-    public function check(): JsonResponse
+    public function check(Request $request): JsonResponse
     {
+    // Only staff members can run deadline automation.
+    $user = $request->user();
+
+    if (!$user->role || $user->role->name !== 'staff') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Only staff members can run deadline automation.',
+        ], 403);
+    }
         $today = now()->startOfDay();
         $reminderDate = now()->addDays(7)->endOfDay();
 

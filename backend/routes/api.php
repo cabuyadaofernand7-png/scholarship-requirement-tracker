@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Http\Request;
@@ -10,40 +11,57 @@ use App\Http\Controllers\Api\ApplicationStatusController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ScholarshipDeadlineController;
 use App\Http\Controllers\Api\ApplicationDocumentController;
+use App\Http\Controllers\Api\ApplicationDocumentDownloadController;
 
+// Public authentication routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::post(
-    '/applications/{application}/submit',
-    [ApplicationSubmissionController::class, 'submit']
-);
-Route::post(
-    '/applications/{application}/check-missing-documents',
-    [MissingDocumentReminderController::class, 'check']
-);
-Route::post(
-    '/applications/{application}/assign-reviewer',
-    [ReviewerAssignmentController::class, 'assign']
-);
-Route::patch(
-    '/applications/{application}/status',
-    [ApplicationStatusController::class, 'update']
-);
-Route::get('/notifications', [NotificationController::class, 'index']);
-Route::post(
-    '/automation/check-deadlines',
-    [ScholarshipDeadlineController::class, 'check']
-);
-
-
-// Existing authentication routes — leave these untouched for now.
+// Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+    // Staff and assigned reviewers can download documents.
+    Route::get(
+        '/documents/{document}/download',
+        [ApplicationDocumentDownloadController::class, 'download']
+    );
 
-Route::post(
-    '/applications/{application}/documents',
-    [ApplicationDocumentController::class, 'upload']
-);
+    // Student application operations
+    Route::post(
+        '/applications/{application}/submit',
+        [ApplicationSubmissionController::class, 'submit']
+    );
+
+    Route::post(
+        '/applications/{application}/check-missing-documents',
+        [MissingDocumentReminderController::class, 'check']
+    );
+
+    Route::post(
+        '/applications/{application}/documents',
+        [ApplicationDocumentController::class, 'upload']
+    );
+
+    // Staff and reviewer operations
+    Route::post(
+        '/applications/{application}/assign-reviewer',
+        [ReviewerAssignmentController::class, 'assign']
+    );
+
+    Route::patch(
+        '/applications/{application}/status',
+        [ApplicationStatusController::class, 'update']
+    );
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+
+    // Staff automation
+    Route::post(
+        '/automation/check-deadlines',
+        [ScholarshipDeadlineController::class, 'check']
+    );
+
+    // User authentication
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/user', function (Request $request) {

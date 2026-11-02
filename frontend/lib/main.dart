@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
-
 import 'package:flutter/material.dart';
 import 'services/api_service.dart';
+import 'login_page.dart';
 
 void main() {
   runApp(const ScholarshipTrackerApp());
@@ -22,7 +22,7 @@ class ScholarshipTrackerApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const DashboardPage(),
+      home: LoginPage(apiService: ApiService()),
     );
   }
 }
@@ -30,7 +30,14 @@ class ScholarshipTrackerApp extends StatelessWidget {
 // DASHBOARD PAGE
 
 class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
+  final ApiService apiService;
+  final Map<String, dynamic> user;
+
+  const DashboardPage({
+    super.key,
+    required this.apiService,
+    required this.user,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,19 +46,54 @@ class DashboardPage extends StatelessWidget {
         title: const Text('Scholarship Requirement Tracker'),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
+
         actions: [
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.notifications_outlined),
             tooltip: 'Notifications',
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: 20),
-            child: CircleAvatar(
-              child: Icon(Icons.person),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: Text(
+                user['name'] ?? 'Student',
+                style: const TextStyle(
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
+          IconButton(
+            onPressed: () async {
+              try {
+                await apiService.logout();
+
+                if (!context.mounted) return;
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LoginPage(
+                      apiService: apiService,
+                    ),
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Logout failed: $e'),
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+          ),
         ],
+
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -124,8 +166,10 @@ class DashboardPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                      const ApplicationDetailsPage(),
+                      builder: (context) => ApplicationDetailsPage(
+                        apiService: apiService,
+                        applicationId: 3,
+                      ),
                     ),
                   );
                 },
@@ -176,7 +220,7 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 12),
 
             FutureBuilder<List<dynamic>>(
-              future: ApiService().getNotifications(),
+              future: apiService.getNotifications(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState ==
                     ConnectionState.waiting) {
@@ -230,11 +274,139 @@ class DashboardPage extends StatelessWidget {
 
 // APPLICATION DETAILS PAGE
 
-class ApplicationDetailsPage extends StatelessWidget {
-  const ApplicationDetailsPage({super.key});
+
+class ApplicationDetailsPage extends StatefulWidget {
+  final ApiService apiService;
+  final int applicationId;
+
+  const ApplicationDetailsPage({
+    super.key,
+    required this.apiService,
+    required this.applicationId,
+  });
+
+  @override
+  State<ApplicationDetailsPage> createState() =>
+      _ApplicationDetailsPageState();
+}
+
+class _ApplicationDetailsPageState
+    extends State<ApplicationDetailsPage> {
+  final Map<int, String> uploadedFiles = {};
+  final Map<int, bool> isUploading = {};
+
+  final List<Map<String, dynamic>> requiredDocuments = [
+    {
+      'id': 1,
+      'name': 'Certificate of Registration',
+    },
+    {
+      'id': 2,
+      'name': 'Latest Grades',
+    },
+    {
+      'id': 3,
+      'name': 'Certificate of Indigency',
+    },
+    {
+      'id': 4,
+      'name': 'Parent or Guardian Information',
+    },
+  ];
+
+  bool isSubmitting = false;
+
+  Future<void> uploadDocument(
+      int documentId,
+      String fileName,
+      Uint8List fileBytes,
+      ) async {
+    setState(() {
+      isUploading[documentId] = true;
+    });
+
+    try {
+      await widget.apiService.uploadDocument(
+        applicationId: widget.applicationId,
+        requiredDocumentId: documentId,
+        fileName: fileName,
+        fileBytes: fileBytes,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        uploadedFiles[documentId] = fileName;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$fileName uploaded successfully.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload failed: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isUploading[documentId] = false;
+        });
+      }
+    }
+  }
+
+  Future<void> submitApplication() async {
+    if (uploadedFiles.length != requiredDocuments.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please upload all four required documents.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isSubmitting = true;
+    });
+
+    try {
+      final result = await widget.apiService.submitApplication(
+        applicationId: widget.applicationId,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['message'] ?? 'Application submitted successfully.',
+          ),
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Submission failed: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSubmitting = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final completedCount = uploadedFiles.length;
+    final progress = completedCount / requiredDocuments.length;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Application Details'),
@@ -253,28 +425,27 @@ class ApplicationDetailsPage extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 20),
 
-            const Card(
+            Card(
               child: Column(
                 children: [
                   ListTile(
-                    title: Text('Application Number'),
-                    subtitle: Text('SAMPLE-2026-001'),
+                    title: const Text('Application Number'),
+                    subtitle: const Text('TEST-W14-SUBMISSION-001'),
                   ),
-                  Divider(height: 1),
-                  ListTile(
+                  const Divider(height: 1),
+                  const ListTile(
                     title: Text('Application Status'),
                     subtitle: Text('Draft'),
-                    trailing: Chip(
-                      label: Text('Draft'),
-                    ),
+                    trailing: Chip(label: Text('Draft')),
                   ),
-                  Divider(height: 1),
+                  const Divider(height: 1),
                   ListTile(
-                    title: Text('Required Documents'),
-                    subtitle: Text('2 submitted, 2 missing'),
+                    title: const Text('Required Documents'),
+                    subtitle: Text(
+                      '$completedCount of ${requiredDocuments.length} uploaded',
+                    ),
                   ),
                 ],
               ),
@@ -289,18 +460,16 @@ class ApplicationDetailsPage extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 12),
 
-            const LinearProgressIndicator(
-              value: 0.5,
+            LinearProgressIndicator(
+              value: progress,
               minHeight: 8,
             ),
-
             const SizedBox(height: 8),
 
-            const Text(
-              '2 of 4 sample requirements completed.',
+            Text(
+              '$completedCount of ${requiredDocuments.length} requirements completed.',
             ),
 
             const SizedBox(height: 24),
@@ -312,38 +481,47 @@ class ApplicationDetailsPage extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 12),
 
-            const DocumentItem(
-              name: 'Certificate of Registration',
-              submitted: true,
-              requiredDocumentId: 1,
-            ),
-            const DocumentItem(
-              name: 'Latest Grades',
-              submitted: true,
-              requiredDocumentId: 2,
-            ),
-            const DocumentItem(
-              name: 'Certificate of Indigency',
-              submitted: false,
-              requiredDocumentId: 3,
-            ),
-            const DocumentItem(
-              name: 'Parent or Guardian Information',
-              submitted: false,
-              requiredDocumentId: 4,
-            ),
+            ...requiredDocuments.map((document) {
+              final id = document['id'] as int;
+
+              return DocumentItem(
+                name: document['name'] as String,
+                submitted: uploadedFiles.containsKey(id),
+                requiredDocumentId: id,
+                isUploading: isUploading[id] ?? false,
+                uploadedFileName: uploadedFiles[id],
+                onUpload: (fileName, bytes) {
+                  uploadDocument(id, fileName, bytes);
+                },
+              );
+            }),
 
             const SizedBox(height: 24),
 
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: null,
-                icon: const Icon(Icons.send),
-                label: const Text('Submit Application'),
+                onPressed:
+                completedCount == requiredDocuments.length &&
+                    !isSubmitting
+                    ? submitApplication
+                    : null,
+                icon: isSubmitting
+                    ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                  ),
+                )
+                    : const Icon(Icons.send),
+                label: Text(
+                  isSubmitting
+                      ? 'Submitting...'
+                      : 'Submit Application',
+                ),
               ),
             ),
 
@@ -351,7 +529,7 @@ class ApplicationDetailsPage extends StatelessWidget {
 
             const Center(
               child: Text(
-                'Complete all required documents before submission.',
+                'Upload all required documents before submission.',
                 textAlign: TextAlign.center,
               ),
             ),
@@ -361,6 +539,7 @@ class ApplicationDetailsPage extends StatelessWidget {
     );
   }
 }
+
 
 // SUMMARY CARD
 
@@ -409,22 +588,27 @@ class SummaryCard extends StatelessWidget {
 }
 
 // DOCUMENT ITEM
-// DOCUMENT ITEM
 
 class DocumentItem extends StatefulWidget {
-  final String name;
-  final bool submitted;
-  final int requiredDocumentId;
+final String name;
+final bool submitted;
+final int requiredDocumentId;
+final bool isUploading;
+final String? uploadedFileName;
+final Function(String fileName, Uint8List bytes)? onUpload;
 
-  const DocumentItem({
-    super.key,
-    required this.name,
-    required this.submitted,
-    required this.requiredDocumentId,
-  });
+const DocumentItem({
+super.key,
+required this.name,
+required this.submitted,
+required this.requiredDocumentId,
+this.isUploading = false,
+this.uploadedFileName,
+this.onUpload,
+});
 
-  @override
-  State<DocumentItem> createState() => _DocumentItemState();
+@override
+State<DocumentItem> createState() => _DocumentItemState();
 }
 
 class _DocumentItemState extends State<DocumentItem> {
@@ -443,26 +627,20 @@ class _DocumentItemState extends State<DocumentItem> {
       if (pickedFile != null) {
         final bytes = await pickedFile.readAsBytes();
 
+        if (!mounted) return;
+
         setState(() {
           selectedFileName = pickedFile.name;
           selectedFileBytes = bytes;
         });
 
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${pickedFile.name} selected successfully.'),
-          ),
-        );
+        widget.onUpload?.call(pickedFile.name, bytes);
       }
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unable to select file: $e'),
-        ),
+        SnackBar(content: Text('Unable to select file: $e')),
       );
     } finally {
       if (mounted) {
@@ -475,56 +653,42 @@ class _DocumentItemState extends State<DocumentItem> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isSelected =
-        selectedFileName != null && selectedFileBytes != null;
-
-    final Color statusColor = widget.submitted
-        ? Colors.green
-        : isSelected
-        ? Colors.blue
-        : Colors.orange;
-
-    final IconData statusIcon = widget.submitted
-        ? Icons.check_circle
-        : isSelected
-        ? Icons.attach_file
-        : Icons.pending_actions;
+    final fileName = widget.uploadedFileName ?? selectedFileName;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: ListTile(
         leading: Icon(
-          statusIcon,
-          color: statusColor,
+          widget.submitted
+              ? Icons.check_circle
+              : Icons.pending_actions,
+          color: widget.submitted ? Colors.green : Colors.orange,
         ),
         title: Text(widget.name),
-        subtitle: isSelected
-            ? Text(
-          selectedFileName!,
+        subtitle: Text(
+          widget.isUploading
+              ? 'Uploading...'
+              : fileName ?? 'No file uploaded',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-        )
-            : Text(
-          widget.submitted
-              ? 'Previously submitted'
-              : 'No file selected',
         ),
         trailing: ElevatedButton(
-          onPressed: isPicking ? null : pickDocument,
-          child: isPicking
+          onPressed: widget.isUploading || isPicking
+              ? null
+              : pickDocument,
+          child: widget.isUploading || isPicking
               ? const SizedBox(
             width: 18,
             height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2),
           )
-              : Text(isSelected ? 'Change' : 'Upload'),
+              : Text(fileName != null ? 'Change' : 'Upload'),
         ),
       ),
     );
   }
 }
+
 
 // NOTIFICATION ITEM
 

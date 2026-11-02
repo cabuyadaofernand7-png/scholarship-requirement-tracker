@@ -15,6 +15,15 @@ class ReviewerAssignmentController extends Controller
 {
     public function assign(Request $request, Application $application): JsonResponse
     {
+    // Only staff members can assign reviewers.
+    $user = $request->user();
+
+    if (!$user->role || $user->role->name !== 'staff') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Only staff members can assign reviewers.',
+        ], 403);
+    }
         $validated = $request->validate([
             'reviewer_id' => ['required', 'integer', 'exists:users,id'],
         ]);
@@ -49,11 +58,11 @@ class ReviewerAssignmentController extends Controller
             ], 409);
         }
 
-        $assignment = DB::transaction(function () use ($application, $reviewer) {
+        $assignment = DB::transaction(function () use ($application, $reviewer, $user) {
             $assignment = ReviewAssignment::create([
                 'application_id' => $application->id,
                 'reviewer_id' => $reviewer->id,
-                'assigned_by' => null,
+                'assigned_by' => $user->id,
                 'status' => 'pending',
                 'assigned_at' => now(),
             ]);

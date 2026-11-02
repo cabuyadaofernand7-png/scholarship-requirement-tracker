@@ -6,11 +6,25 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class MissingDocumentReminderController extends Controller
 {
-    public function check(Application $application): JsonResponse
+    public function check(Request $request, Application $application): JsonResponse
     {
+    // Only students can check their own applications.
+    $user = $request->user();
+
+    if (
+        !$user->role ||
+        $user->role->name !== 'student' ||
+        (int) $application->user_id !== (int) $user->id
+    ) {
+        return response()->json([
+            'success' => false,
+            'message' => 'You are not authorized to check this application.',
+        ], 403);
+    }
         $requiredDocuments = $application->scholarshipProgram
             ->requiredDocuments()
             ->where('is_required', true)

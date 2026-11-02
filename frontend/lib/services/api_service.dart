@@ -1,13 +1,13 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
 
-  // LOGIN
+  String? token;
+
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -27,6 +27,7 @@ class ApiService {
     final result = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
+      token = result['token'] as String;
       return result as Map<String, dynamic>;
     }
 
@@ -35,18 +36,36 @@ class ApiService {
     );
   }
 
-  // GET NOTIFICATIONS
+  Future<void> logout() async {
+    if (token == null) return;
+
+    await http.post(
+      Uri.parse('$baseUrl/logout'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    token = null;
+  }
+
   Future<List<dynamic>> getNotifications() async {
+    if (token == null) {
+      throw Exception('Please log in first.');
+    }
+
     final response = await http.get(
       Uri.parse('$baseUrl/notifications'),
       headers: {
         'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
       },
     );
 
-    if (response.statusCode == 200) {
-      final result = jsonDecode(response.body);
+    final result = jsonDecode(response.body);
 
+    if (response.statusCode == 200) {
       return result['data']['data'] as List<dynamic>;
     }
 
@@ -55,19 +74,19 @@ class ApiService {
     );
   }
 
-  // UPLOAD DOCUMENT
   Future<Map<String, dynamic>> uploadDocument({
     required int applicationId,
     required int requiredDocumentId,
     required String fileName,
     required Uint8List fileBytes,
-    required String token,
   }) async {
+    if (token == null) {
+      throw Exception('Please log in first.');
+    }
+
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse(
-        '$baseUrl/applications/$applicationId/documents',
-      ),
+      Uri.parse('$baseUrl/applications/$applicationId/documents'),
     );
 
     request.headers.addAll({
@@ -88,7 +107,6 @@ class ApiService {
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
-
     final result = jsonDecode(response.body);
 
     if (response.statusCode == 201) {
@@ -97,6 +115,31 @@ class ApiService {
 
     throw Exception(
       result['message'] ?? 'Document upload failed.',
+    );
+  }
+  Future<Map<String, dynamic>> submitApplication({
+    required int applicationId,
+  }) async {
+    if (token == null) {
+      throw Exception('Please log in first.');
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/applications/$applicationId/submit'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    final result = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return result as Map<String, dynamic>;
+    }
+
+    throw Exception(
+      result['message'] ?? 'Application submission failed.',
     );
   }
 }

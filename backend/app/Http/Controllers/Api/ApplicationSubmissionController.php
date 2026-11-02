@@ -6,11 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class ApplicationSubmissionController extends Controller
 {
-    public function submit(Application $application): JsonResponse
-    {
+    public function submit(Request $request, Application $application): JsonResponse
+    {// Only students can submit their own applications.
+     $user = $request->user();
+
+     if (
+         !$user->role ||
+         $user->role->name !== 'student' ||
+         (int) $application->user_id !== (int) $user->id
+     ) {
+         return response()->json([
+             'success' => false,
+             'message' => 'You are not authorized to submit this application.',
+         ], 403);
+     }
         if ($application->status !== 'draft') {
             return response()->json([
                 'success' => false,

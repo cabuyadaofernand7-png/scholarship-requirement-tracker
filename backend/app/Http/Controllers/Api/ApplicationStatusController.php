@@ -14,6 +14,18 @@ class ApplicationStatusController extends Controller
 {
     public function update(Request $request, Application $application): JsonResponse
     {
+    // Only staff and reviewers can update application statuses.
+    $user = $request->user();
+
+    if (
+        !$user->role ||
+        !in_array($user->role->name, ['staff', 'reviewer'], true)
+    ) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Only staff and reviewers can update application statuses.',
+        ], 403);
+    }
         $validated = $request->validate([
             'status' => [
                 'required',

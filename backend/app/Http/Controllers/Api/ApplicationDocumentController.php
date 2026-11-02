@@ -11,9 +11,23 @@ use Illuminate\Support\Facades\Storage;
 
 class ApplicationDocumentController extends Controller
 {
-    public function upload(Request $request, Application $application)
-    {
-        // Validate the required document ID and uploaded file.
+public function upload(Request $request, Application $application)
+{
+    // Only students can upload their own application documents.
+    $user = $request->user();
+
+    if (
+        !$user->role ||
+        $user->role->name !== 'student' ||
+        (int) $application->user_id !== (int) $user->id
+    ) {
+        return response()->json([
+            'success' => false,
+            'message' => 'You are not authorized to upload documents for this application.',
+        ], 403);
+    }
+
+    // Validate the required document ID and uploaded file.
         $validated = $request->validate([
             'required_document_id' => [
                 'required',
@@ -72,7 +86,7 @@ class ApplicationDocumentController extends Controller
         // Store the new file.
         $filePath = $file->store(
             'application-documents',
-            'public'
+            'local'
         );
 
         // Remove the previous file when replacing an upload.
@@ -80,7 +94,7 @@ class ApplicationDocumentController extends Controller
             $existingDocument &&
             $existingDocument->file_path
         ) {
-            Storage::disk('public')->delete(
+            Storage::disk('local')->delete(
                 $existingDocument->file_path
             );
         }

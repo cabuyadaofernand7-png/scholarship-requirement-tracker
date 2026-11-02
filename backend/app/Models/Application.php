@@ -34,6 +34,11 @@ class Application extends Model
         return $this->belongsTo(ScholarshipProgram::class);
     }
 
+    public function reviewAssignments(): HasMany
+    {
+        return $this->hasMany(ReviewAssignment::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(ApplicationDocument::class);
