@@ -89,14 +89,12 @@ public function upload(Request $request, Application $application)
             'local'
         );
 
-        // Remove the previous file when replacing an upload.
-        if (
-            $existingDocument &&
-            $existingDocument->file_path
-        ) {
-            Storage::disk('local')->delete(
-                $existingDocument->file_path
-            );
+        // Stop if the file could not be stored.
+        if (!$filePath) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Document storage is temporarily unavailable. Please try again later.',
+            ], 503);
         }
 
         // Save the document information.
@@ -117,6 +115,16 @@ public function upload(Request $request, Application $application)
                 'reviewed_by' => null,
             ]
         );
+        // Remove the previous file only after the replacement is saved.
+        if (
+            $existingDocument &&
+            $existingDocument->file_path &&
+            $existingDocument->file_path !== $filePath
+        ) {
+            Storage::disk('local')->delete(
+                $existingDocument->file_path
+            );
+        }
 
         return response()->json([
             'message' => 'Document uploaded successfully.',

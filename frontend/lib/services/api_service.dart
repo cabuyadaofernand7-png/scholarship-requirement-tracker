@@ -66,7 +66,7 @@ class ApiService {
     final result = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      return result['data']['data'] as List<dynamic>;
+      return result['data'] as List<dynamic>;
     }
 
     throw Exception(

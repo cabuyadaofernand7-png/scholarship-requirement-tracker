@@ -173,4 +173,19 @@ class DocumentDownloadTest extends TestCase
             ->getJson('/api/documents/999999/download')
             ->assertNotFound();
     }
+    public function test_reassigned_reviewer_cannot_download_document(): void
+    {
+        DB::table('review_assignments')->insert([
+            'application_id' => $this->applicationId,
+            'reviewer_id' => $this->reviewer->id,
+            'status' => 'reassigned',
+            'assigned_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->reviewer, 'sanctum')
+            ->getJson("/api/documents/{$this->documentId}/download")
+            ->assertForbidden();
+    }
 }

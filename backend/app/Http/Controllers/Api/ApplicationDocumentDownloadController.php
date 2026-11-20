@@ -32,6 +32,7 @@ class ApplicationDocumentDownloadController extends Controller
             $isAssigned = $application &&
                 $application->reviewAssignments()
                     ->where('reviewer_id', $user->id)
+                    ->whereIn('status', ['pending', 'in_progress'])
                     ->exists();
 
             if (!$isAssigned) {

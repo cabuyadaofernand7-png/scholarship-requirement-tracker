@@ -14,18 +14,35 @@ class ApplicationStatusController extends Controller
 {
     public function update(Request $request, Application $application): JsonResponse
     {
-    // Only staff and reviewers can update application statuses.
-    $user = $request->user();
+        // Only staff and reviewers can update application statuses.
+        $user = $request->user();
 
-    if (
-        !$user->role ||
-        !in_array($user->role->name, ['staff', 'reviewer'], true)
-    ) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Only staff and reviewers can update application statuses.',
-        ], 403);
-    }
+        if (
+            !$user->role ||
+            !in_array($user->role->name, ['staff', 'reviewer'], true)
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only staff and reviewers can update application statuses.',
+            ], 403);
+        }
+
+        // Reviewers must be assigned to the specific application.
+        if ($user->role->name === 'reviewer') {
+            $isAssigned = DB::table('review_assignments')
+                ->where('application_id', $application->id)
+                ->where('reviewer_id', $user->id)
+                ->whereIn('status', ['pending', 'in_progress'])
+                ->exists();
+
+            if (!$isAssigned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not assigned to review this application.',
+                ], 403);
+            }
+        }
+
         $validated = $request->validate([
             'status' => [
                 'required',
@@ -48,6 +65,27 @@ class ApplicationStatusController extends Controller
                 'success' => false,
                 'message' => 'The application already has this status.',
             ], 409);
+        }
+        // Enforce the review workflow for reviewers.
+        if ($user->role->name === 'reviewer') {
+            $allowedTransitions = [
+                'submitted' => ['under_review'],
+                'under_review' => [
+                    'incomplete',
+                    'for_correction',
+                    'approved',
+                    'rejected',
+                ],
+            ];
+
+            $allowedNextStatuses = $allowedTransitions[$oldStatus] ?? [];
+
+            if (!in_array($newStatus, $allowedNextStatuses, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid status transition. Reviewers must move submitted applications to under_review before making a review decision.',
+                ], 409);
+            }
         }
 
         DB::transaction(function () use (
