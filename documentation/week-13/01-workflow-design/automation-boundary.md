@@ -51,8 +51,28 @@ Each automation operation should have a recorded outcome: successful, recovered 
 Logs should include relevant identifiers, event type, attempt number, and outcome. Passwords, access tokens, private information, and confidential review comments must not be included.
 
 ## 7. Scope Limitations
+   Scope of the Project
+   The Scholarship Requirement Tracker is a web-based application designed to help students monitor their scholarship applications, track required documents, and receive notifications about missing requirements and approaching deadlines.
 
-This document covers Week 13 automation planning and design. It does not claim that every workflow is already implemented. Actual implementation and test results will be documented separately.
+The system includes the following functions:
+1. User Account Management – Allows students and authorized staff to access the system according to their assigned roles.
+2. Scholarship Management – Allows authorized staff to manage scholarship programs, requirements, and application deadlines.
+3. Document Submission – Allows students to upload and manage the documents required for their scholarship applications.
+4. Requirement Tracking – Displays submitted, missing, and incomplete documents.
+5. Application Monitoring – Allows students to monitor their application status.
+6. Automated Notifications – Generates reminders for missing documents, approaching deadlines, reviewer assignments, and application status changes.
+7. Application Validation – Checks whether all required documents are complete before allowing an application to be submitted.
+8. Application Review – Supports reviewer assignment and application status updates by authorized staff.
+
+Out of Scope of the Project
+   The following functions are excluded from the current development of the Scholarship Requirement Tracker:
+1. Scholarship Payment Processing – The system will not process scholarship allowances, tuition payments, or financial transactions.
+2. Automatic Scholarship Approval – The system will not automatically approve or reject scholarship applications. Final decisions remain with authorized personnel.
+3. External Institution Integration – The system will not automatically retrieve student records from university databases or external institutions.
+4. Third-Party Scholarship Applications – The system will not submit applications to external scholarship organizations or government portals.
+5. Physical Document Processing – The system will not handle the physical printing, notarization, or delivery of original documents.
+6. SMS Notifications – The system will not send reminders through SMS. Notifications will use the supported in-app and email channels.
+7. Native Mobile Application – The project focuses on a web-based application rather than separate Android or iOS applications.
 
 ## 8. Expected Outcome
 

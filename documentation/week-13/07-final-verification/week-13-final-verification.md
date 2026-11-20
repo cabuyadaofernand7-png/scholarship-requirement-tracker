@@ -1,4 +1,4 @@
-﻿# Week 13 â€“ Final Verification Checklist
+﻿# Week 13 “ Final Verification Checklist
 
 **Project:** Scholarship Requirement Tracker
 **Week:** 13 â€“ Advanced Automation and Scripting

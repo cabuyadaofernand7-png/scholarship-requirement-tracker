@@ -16,3 +16,10 @@
 # Operating System
 Thumbs.db
 .DS_Store
+
+# Local recovery and temporary files
+/backend/.env.recovery-test-backup
+/backend/week14-before-private-storage-migration.sql
+/frontend/test/widget_test.dart.bak
+/Week-14-Source-Materials-Updated.zip
+/week-13-documents.zip

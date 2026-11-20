@@ -68,17 +68,17 @@ The generated build used the local development API URL. It must be configured ap
 
 ## 8. Limitations
 
-- The Flutter Web build directory did not exist during these checks.
-- Generated build files have not yet been inspected.
-- Source-code searches only detect the patterns included in the searches.
+- Source-code and generated-build searches only detect the patterns included in the searches.
 - No complete automated secret-scanning tool was used.
+- The Flutter Web build inspection does not guarantee that all sensitive information is absent from compiled files.
 - The current local HTTP configuration is not production-ready.
-- Additional review is required before deployment.
+- The API uses a localhost address and must be configured for the deployment environment.
+- Additional security review is required before production deployment.
 
 ## 9. Conclusion
 
 The checks confirmed that the backend environment file is ignored by Git and is not tracked. The Laravel application key is configured, and the example environment file uses placeholders for sensitive settings.
 
-The inspected source files and Week 13 archive did not contain filenames or code patterns matching the selected common secret indicators. These checks provide initial evidence of secret-handling practices but do not guarantee that all sensitive information has been eliminated.
+The inspected source files and generated Flutter Web build did not contain matches for the selected common secret indicators. These checks provide initial evidence of secret-handling practices but do not guarantee that all sensitive information has been eliminated.
 
-**Status:** Initial key and secret-handling checks completed. Flutter Web build inspection and further security verification remain pending.
+**Status:** Initial key and secret-handling checks completed, including successful Flutter Web build inspection. Further security verification and production configuration remain necessary.
