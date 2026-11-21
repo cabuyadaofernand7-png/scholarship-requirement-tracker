@@ -96,6 +96,8 @@ The Flutter client currently has a fixed localhost API address. Configure that a
 
 ## Documentation and evidence
 
+The [User Manual](documentation/user-manual.md) explains the current student, staff, and reviewer screens and workflows.
+
 The [Week 17 portfolio](documentation/week-17/README.md) contains the UAT plan and results, API specification, architecture comparison, repository checks, evidence index, and known limitations. The [Week 18 portfolio](documentation/week-18/README.md) contains the final-exam overview, workflow and architecture summary, evidence map, demonstration plan, maintenance evaluation, contribution reflection draft, checklist, and viva questions.
 
 Screenshots and test-output files are evidence for the specific builds and environments recorded with them. Review each evidence index for dates, scope, and limitations before relying on a result.
