@@ -1,0 +1,13 @@
+{
+  "checked_at": "2026-11-22",
+  "scenario": "UAT-17",
+  "request": "POST /api/applications/{controlled-draft}/documents",
+  "storage_failure": "private local storage directory temporarily unavailable; original directory restored immediately",
+  "http_status": 500,
+  "response_message": "Unable to create a directory at C:\\xampp\\htdocs\\scholarship-requirement-tracker\\backend\\storage\\app/private.",
+  "document_count_before": 0,
+  "document_count_after": 0,
+  "storage_restored": true,
+  "temporary_token_removed": true,
+  "temporary_upload_removed": true
+}

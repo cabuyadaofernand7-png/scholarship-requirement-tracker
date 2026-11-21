@@ -1,0 +1,33 @@
+﻿
+
+Endpoint    : /applications
+Name        : Applications
+Status      : 401
+ContentType : application/json
+JsonKeys    : message
+Message     : Unauthenticated.
+Request     : GET; Accept: application/json; no token
+
+Endpoint    : /notifications
+Name        : Notifications
+Status      : 401
+ContentType : application/json
+JsonKeys    : message
+Message     : Unauthenticated.
+Request     : GET; Accept: application/json; no token
+
+Endpoint    : /user
+Name        : Authenticated user
+Status      : 401
+ContentType : application/json
+JsonKeys    : message
+Message     : Unauthenticated.
+Request     : GET; Accept: application/json; no token
+
+Endpoint    : /documents/999999/download
+Name        : Document download - nonexistent ID
+Status      : 401
+ContentType : application/json
+JsonKeys    : message
+Message     : Unauthenticated.
+Request     : GET; Accept: application/json; no token

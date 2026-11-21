@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-11-22",
+  "scenario": "UAT-17",
+  "initial_result": {
+    "issue": "Flysystem directory-creation exception escaped with local path in server response; no document record created",
+    "http_status": 500
+  },
+  "retest": {
+    "storage_failure": "private local storage directory temporarily unavailable; original directory restored immediately",
+    "http_status": 503,
+    "response_message": "Document storage is temporarily unavailable. Please try again later.",
+    "local_path_exposed": false,
+    "document_count_before": 0,
+    "document_count_after": 0,
+    "storage_restored": true,
+    "temporary_token_removed": true,
+    "temporary_upload_removed": true
+  }
+}

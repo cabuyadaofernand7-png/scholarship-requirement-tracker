@@ -1,0 +1,24 @@
+Scholarship Requirement Tracker — Frontend verification
+Date: 2026-11-21 (Philippine Time)
+Working tree: uncommitted Week 17 changes
+
+Command: dart analyze lib test
+Result: Analyzing lib... No issues found!
+
+Command: Flutter test runner via bundled Dart SDK, test --no-pub
+Result:
+00:00 +0: loading test/widget_test.dart
+00:00 +0: Scholarship dashboard displays correctly
+00:00 +1: student can review programs and create a draft application
+00:01 +2: All tests passed!
+
+Command: Flutter tool via bundled Dart SDK, build web --release --no-pub
+Result: Exit code 0; release web build completed at frontend/build/web.
+Note: Flutter emitted an informational WASM dry-run success message and tree-shaking notices.
+
+Scope:
+- This is automated frontend verification, not browser UAT.
+- The new student application widget test covers open-program details, the already-applied state, and successful draft creation through a fake API service. This is automated frontend testing, not browser UAT.
+- No staff, reviewer, or student login session was used and no new browser screenshot is claimed.
+- Backend role API feature tests passed in the SQLite in-memory suite; see `backend-verification.txt`.
+- No MariaDB migrations or live database changes were performed.

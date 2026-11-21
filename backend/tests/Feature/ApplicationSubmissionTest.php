@@ -13,7 +13,9 @@ class ApplicationSubmissionTest extends TestCase
     use RefreshDatabase;
 
     private User $student;
+
     private int $programId;
+
     private int $applicationId;
 
     protected function setUp(): void
@@ -141,6 +143,65 @@ class ApplicationSubmissionTest extends TestCase
         $this->assertDatabaseHas('applications', [
             'id' => $this->applicationId,
             'status' => 'submitted',
+        ]);
+    }
+
+    public function test_student_can_resubmit_application_after_corrections(): void
+    {
+        DB::table('applications')
+            ->where('id', $this->applicationId)
+            ->update(['status' => 'for_correction']);
+
+        $documentOne = $this->createRequiredDocument('Corrected Certificate');
+        $documentTwo = $this->createRequiredDocument('Corrected Grades');
+
+        $this->createSubmittedDocument($documentOne);
+        $this->createSubmittedDocument($documentTwo);
+
+        $response = $this->actingAs($this->student, 'sanctum')
+            ->postJson("/api/applications/{$this->applicationId}/submit");
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath(
+                'message',
+                'Corrected application resubmitted successfully.'
+            )
+            ->assertJsonPath('application.status', 'submitted');
+
+        $this->assertDatabaseHas('applications', [
+            'id' => $this->applicationId,
+            'status' => 'submitted',
+        ]);
+
+        $this->assertDatabaseHas('application_status_histories', [
+            'application_id' => $this->applicationId,
+            'old_status' => 'for_correction',
+            'new_status' => 'submitted',
+            'reason' => 'Corrected application resubmitted.',
+        ]);
+    }
+
+    public function test_correction_resubmission_is_rejected_when_required_documents_are_missing(): void
+    {
+        DB::table('applications')
+            ->where('id', $this->applicationId)
+            ->update(['status' => 'for_correction']);
+
+        $this->createRequiredDocument('Corrected Certificate');
+        $this->createRequiredDocument('Corrected Grades');
+
+        $response = $this->actingAs($this->student, 'sanctum')
+            ->postJson("/api/applications/{$this->applicationId}/submit");
+
+        $response->assertUnprocessable()
+            ->assertJsonStructure([
+                'missing_documents',
+            ]);
+
+        $this->assertDatabaseHas('applications', [
+            'id' => $this->applicationId,
+            'status' => 'for_correction',
         ]);
     }
 

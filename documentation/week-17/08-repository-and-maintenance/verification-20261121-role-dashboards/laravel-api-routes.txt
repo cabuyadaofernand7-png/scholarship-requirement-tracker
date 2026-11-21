@@ -1,0 +1,55 @@
+
+ GET|HEAD api/applications .. Api\StudentApplicationController@index
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ POST api/applications .. Api\StudentApplicationController@store
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ POST api/applications/{application}/assign-reviewer .. Api\ReviewerAssignmentController@assign
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ POST api/applications/{application}/check-missing-documents .. Api\MissingDocumentReminderController@check
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ POST api/applications/{application}/documents .. Api\ApplicationDocumentController@upload
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ PATCH api/applications/{application}/status .. Api\ApplicationStatusController@update
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ POST api/applications/{application}/submit .. Api\ApplicationSubmissionController@submit
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ POST api/automation/check-deadlines .. Api\ScholarshipDeadlineController@check
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ GET|HEAD api/documents/{document}/download .. Api\ApplicationDocumentDownloadController@download
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ POST api/login .. Api\AuthController@login
+ ⇂ api
+ POST api/logout .. Api\AuthController@logout
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ GET|HEAD api/notifications .. Api\NotificationController@index
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ POST api/register .. Api\AuthController@register
+ ⇂ api
+ GET|HEAD api/reviewer/applications .. Api\ReviewerApplicationController@index
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ GET|HEAD api/scholarship-programs .. Api\ScholarshipProgramController@index
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ GET|HEAD api/staff/applications .. Api\StaffApplicationController@index
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ GET|HEAD api/staff/reviewers .. Api\StaffApplicationController@reviewers
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+ GET|HEAD api/user .. routes/api.php:80
+ ⇂ api
+ ⇂ Illuminate\Auth\Middleware\Authenticate:sanctum
+
+ Showing [18] routes

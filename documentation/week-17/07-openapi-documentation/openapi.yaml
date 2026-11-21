@@ -1,0 +1,495 @@
+openapi: 3.1.0
+info:
+  title: Scholarship Requirement Tracker API
+  version: 1.0.0
+  description: >
+    Source-aligned API contract draft for the Scholarship Requirement Tracker.
+    The paths and HTTP methods were checked against the Laravel API route
+    definitions and registered route list. Response descriptions are based on
+    controller behavior. Authenticated responses and complete schema conformance
+    have not been exhaustively compared with captured live responses.
+
+servers:
+  - url: http://127.0.0.1:8000/api
+    description: Local development server only; not a production endpoint.
+
+security:
+  - sanctumBearer: []
+
+paths:
+  /register:
+    post:
+      operationId: registerStudent
+      security: []
+      summary: Register a student account
+      description: >
+        Creates a user with the student role and returns the user information
+        and a newly created Sanctum personal access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - password_confirmation
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+                password:
+                  type: string
+                  minLength: 8
+                password_confirmation:
+                  type: string
+      responses:
+        "201":
+          description: Registration successful; user, role, and token returned.
+        "422":
+          description: Request validation failed.
+
+  /login:
+    post:
+      operationId: login
+      security: []
+      summary: Authenticate a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful; user information and bearer token returned.
+        "401":
+          description: Invalid email or password.
+        "422":
+          description: Request validation failed.
+
+  /logout:
+    post:
+      operationId: logout
+      summary: Revoke the current access token
+      responses:
+        "200":
+          description: Logout successful.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /user:
+    get:
+      operationId: getCurrentUser
+      summary: Return the authenticated user
+      description: Returns the authenticated user with the related role loaded.
+      responses:
+        "200":
+          description: Authenticated user and role returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /applications:
+    get:
+      operationId: listStudentApplications
+      summary: List the authenticated student's applications
+      description: >
+        Student-only endpoint. Returns applications belonging to the
+        authenticated student, including scholarship program information,
+        required-document information, and uploaded-document metadata.
+      responses:
+        "200":
+          description: Student application list returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: Authenticated user does not have the student role.
+    post:
+      operationId: createStudentApplication
+      summary: Create a draft scholarship application
+      description: >
+        Student-only operation. A student may create one application per
+        scholarship program. The program must be active and within its
+        application date window. No migration or database uniqueness change is
+        part of this API operation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scholarship_program_id]
+              properties:
+                scholarship_program_id:
+                  type: integer
+      responses:
+        "201":
+          description: Draft application and generated application number returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: Authenticated user does not have the student role.
+        "409":
+          description: Student already has an application for the program.
+        "422":
+          description: Program identifier is invalid or the program is not open.
+
+  /scholarship-programs:
+    get:
+      operationId: listScholarshipPrograms
+      summary: List programs currently accepting applications
+      description: >
+        Student-only endpoint. Returns active programs whose start date is
+        empty or has arrived and whose deadline is empty or has not passed.
+        Required document metadata and the student's existing application
+        indicator are included.
+      responses:
+        "200":
+          description: Accepting programs returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: Authenticated user does not have the student role.
+
+  /staff/applications:
+    get:
+      operationId: listStaffApplications
+      summary: List all applications for staff
+      description: >
+        Staff-only work queue. Includes student and program details, uploaded
+        document metadata (not private storage paths), and reviewer assignment
+        information.
+      responses:
+        "200":
+          description: Application list returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: Authenticated user is not staff.
+
+  /staff/reviewers:
+    get:
+      operationId: listEligibleReviewers
+      summary: List reviewer accounts for staff assignment
+      description: Staff-only list of eligible reviewer identifiers and names.
+      responses:
+        "200":
+          description: Reviewer list returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: Authenticated user is not staff.
+
+  /reviewer/applications:
+    get:
+      operationId: listReviewerApplications
+      summary: List active applications assigned to the reviewer
+      description: >
+        Reviewer-only work queue. Returns only applications with pending or
+        in-progress assignments belonging to the authenticated reviewer.
+        Includes student, program, and uploaded document metadata. Document
+        downloads remain protected by the document download endpoint.
+      responses:
+        "200":
+          description: The reviewer's assigned application list returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: Authenticated user is not a reviewer.
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      summary: List notifications for the authenticated user
+      description: >
+        Returns a paginated notification collection belonging only to the
+        authenticated user. Laravel pagination places the records in the
+        data property.
+      responses:
+        "200":
+          description: Paginated notification collection returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  current_page:
+                    type: integer
+                  per_page:
+                    type: integer
+                additionalProperties: true
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /applications/{application}/submit:
+    post:
+      operationId: submitStudentApplication
+      summary: Submit the authenticated student's own application
+      description: >
+        Allows the owning student to submit an application only while its
+        status is draft or for_correction and all required documents have been submitted.
+        Successful submission records the submitted status and status history.
+      parameters:
+        - $ref: "#/components/parameters/ApplicationId"
+      responses:
+        "200":
+          description: Application submitted successfully.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: User is not the owning student or does not have the student role.
+        "409":
+          description: Application is not in draft or for_correction status.
+        "422":
+          description: Required documents are missing; missing_documents is returned.
+
+  /applications/{application}/check-missing-documents:
+    post:
+      operationId: checkMissingDocuments
+      summary: Check required documents and create a reminder when needed
+      description: >
+        Student-only operation for the authenticated student's own application.
+        Returns the missing required documents. If documents are missing, an
+        in-app reminder is created only when an active matching reminder does
+        not already exist.
+      parameters:
+        - $ref: "#/components/parameters/ApplicationId"
+      responses:
+        "200":
+          description: Missing-document check completed.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: User is not the owning student or does not have the student role.
+
+  /applications/{application}/documents:
+    post:
+      operationId: uploadApplicationDocument
+      summary: Upload or replace a required application document
+      description: >
+        Only the owning student may upload documents. Uploads are allowed only
+        while the application is in draft or for_correction status. The required
+        document must belong to the application's scholarship program. Allowed
+        file types and maximum file size are read from the required-document
+        configuration.
+      parameters:
+        - $ref: "#/components/parameters/ApplicationId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - required_document_id
+                - file
+              properties:
+                required_document_id:
+                  type: integer
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Document uploaded; document metadata returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: User is not the owning student or does not have the student role.
+        "409":
+          description: Application is not in draft or for_correction status.
+        "422":
+          description: Validation failed or the required document does not belong to the application's scholarship program.
+        "503":
+          description: Private document storage is unavailable.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - message
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Document storage is temporarily unavailable. Please try again later.
+
+  /documents/{document}/download:
+    get:
+      operationId: downloadApplicationDocument
+      summary: Download an application document
+      description: >
+        Only staff and reviewers may download documents. Reviewers must have
+        an active assignment for the application. The file is returned from
+        the private local storage disk.
+      parameters:
+        - name: document
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Private document file returned as a download.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: User is not staff or an assigned reviewer.
+        "404":
+          description: Document record exists but its stored file is missing.
+
+  /applications/{application}/assign-reviewer:
+    post:
+      operationId: assignReviewer
+      summary: Assign a reviewer to a submitted application
+      description: >
+        Staff-only operation. The selected user must have the reviewer role.
+        The application must be submitted and must not already have an active
+        reviewer assignment.
+      parameters:
+        - $ref: "#/components/parameters/ApplicationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reviewer_id
+              properties:
+                reviewer_id:
+                  type: integer
+      responses:
+        "201":
+          description: Reviewer assignment and in-app notification created.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: Authenticated user is not staff.
+        "409":
+          description: Application is not submitted or already has an active assignment.
+        "422":
+          description: Reviewer ID is invalid or the selected user does not have the reviewer role.
+
+  /applications/{application}/status:
+    patch:
+      operationId: updateApplicationStatus
+      summary: Update an application status
+      description: >
+        Staff and reviewers may update application status. A reviewer must have
+        an active assignment for the application and must follow the review
+        transition rules. Staff are not subject to the reviewer's transition
+        restriction in the inspected controller.
+      parameters:
+        - $ref: "#/components/parameters/ApplicationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - under_review
+                    - incomplete
+                    - for_correction
+                    - approved
+                    - rejected
+                reason:
+                  type:
+                    - string
+                    - "null"
+                  maxLength: 1000
+      responses:
+        "200":
+          description: Application status updated; status history and in-app notification created.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: User is not staff or an assigned reviewer.
+        "409":
+          description: Duplicate status or invalid reviewer status transition.
+        "422":
+          description: Request validation failed.
+
+  /automation/check-deadlines:
+    post:
+      operationId: checkScholarshipDeadlines
+      summary: Check scholarship deadlines and create reminders
+      description: >
+        Staff-only operation. Checks active scholarship programs with
+        application deadlines from the current day through the next seven days.
+        Creates in-app reminders for eligible draft, incomplete, or
+        for_correction applications when a reminder has not already been
+        scheduled for that application on the current day.
+      responses:
+        "200":
+          description: Deadline check completed; programs_checked and reminders_created returned.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          description: Authenticated user is not staff.
+
+components:
+  responses:
+    Unauthenticated:
+      description: Request is missing valid Sanctum bearer authentication.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                example: Unauthenticated.
+
+  securitySchemes:
+    sanctumBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum personal access token
+
+  parameters:
+    ApplicationId:
+      name: application
+      in: path
+      required: true
+      description: Laravel application route-model identifier.
+      schema:
+        type: integer

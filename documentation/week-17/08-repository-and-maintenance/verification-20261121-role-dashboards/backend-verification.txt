@@ -1,0 +1,15 @@
+Scholarship Requirement Tracker — Backend verification
+Date: 2026-11-21 (Philippine Time)
+Working tree: uncommitted Week 17 changes
+Database: PHPUnit configuration uses SQLite in memory (DB_CONNECTION=sqlite, DB_DATABASE=:memory:).
+
+Command: php artisan test --filter=RoleApplicationListTest
+Result: 3 passed, 14 assertions, 0 failures.
+
+Command: php artisan test
+Result: 69 passed, 175 assertions, 0 failures.
+
+Command: php artisan route:list --path=api -v
+Result: 18 routes registered. The three new staff/reviewer routes are protected by auth:sanctum; controller role checks apply to staff and reviewer work queues.
+
+No MariaDB migrations, destructive database commands, or live database writes were performed for this verification.

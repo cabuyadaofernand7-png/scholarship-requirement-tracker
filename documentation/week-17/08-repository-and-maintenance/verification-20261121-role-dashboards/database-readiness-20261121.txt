@@ -1,0 +1,42 @@
+
+ Migration name .. Batch / Status
+ 0001_01_01_000000_create_users_table .. [1] Ran
+ 0001_01_01_000001_create_cache_table .. [1] Ran
+ 0001_01_01_000002_create_jobs_table .. [1] Ran
+ 2026_10_31_064408_create_roles_table .. [2] Ran
+ 2026_10_31_064448_add_role_id_to_users_table .. [2] Ran
+ 2026_10_31_064653_create_scholarship_programs_table .. [3] Ran
+ 2026_10_31_064727_create_applications_table .. [3] Ran
+ 2026_10_31_064803_create_required_documents_table .. [3] Ran
+ 2026_10_31_065232_create_application_documents_table .. [3] Ran
+ 2026_10_31_065302_create_review_assignments_table .. [3] Ran
+ 2026_10_31_065325_create_reviews_table .. [3] Ran
+ 2026_10_31_065353_create_application_status_histories_table .. [3] Ran
+ 2026_10_31_065413_create_notifications_table .. [3] Ran
+ 2026_10_31_071202_create_personal_access_tokens_table .. [4] Ran
+ 2026_10_31_111915_add_retry_tracking_to_notifications_table .. [5] Ran
+
+array:4 [
+  "users_by_role" => array:3 [
+    0 => {#6641
+      +"name": "reviewer"
+      +"total": 1
+    }
+    1 => {#6642
+      +"name": "staff"
+      +"total": 1
+    }
+    2 => {#6640
+      +"name": "student"
+      +"total": 1
+    }
+  ]
+  "applications_by_status" => array:1 [
+    0 => {#6644
+      +"status": "submitted"
+      +"total": 3
+    }
+  ]
+  "active_program_count" => 1
+  "review_assignment_count" => 0
+] // vendor\psy\psysh\src\ExecutionClosure.php(41) : eval()'d code:1

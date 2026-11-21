@@ -1,0 +1,130 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/applications",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/applications",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/scholarship-programs",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/staff/applications",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/staff/reviewers",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/reviewer/applications",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/documents/999999/download",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/applications/999999/submit",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/applications/999999/check-missing-documents",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/applications/999999/documents",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/applications/999999/assign-reviewer",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/applications/999999/status",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/notifications",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/automation/check-deadlines",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/logout",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/user",
+    "status": 401,
+    "content_type": "application/json",
+    "body": "{\"message\":\"Unauthenticated.\"}",
+    "match": true
+  }
+]

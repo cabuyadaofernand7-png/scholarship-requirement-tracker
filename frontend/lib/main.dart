@@ -1,8 +1,11 @@
 import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+
 import 'services/api_service.dart';
 import 'login_page.dart';
+import 'new_application_page.dart';
 
 void main() {
   runApp(const ScholarshipTrackerApp());
@@ -17,9 +20,7 @@ class ScholarshipTrackerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Scholarship Requirement Tracker',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
       home: LoginPage(apiService: ApiService()),
@@ -29,7 +30,7 @@ class ScholarshipTrackerApp extends StatelessWidget {
 
 // DASHBOARD PAGE
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   final ApiService apiService;
   final Map<String, dynamic> user;
 
@@ -40,16 +41,126 @@ class DashboardPage extends StatelessWidget {
   });
 
   @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  late Future<List<dynamic>> applicationsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    applicationsFuture = widget.apiService.getApplications();
+  }
+
+  void reloadApplications() {
+    setState(() {
+      applicationsFuture = widget.apiService.getApplications();
+    });
+  }
+
+  void showNotifications() {
+    final notificationsFuture = widget.apiService.getNotifications();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return FractionallySizedBox(
+          heightFactor: 0.7,
+          child: SafeArea(
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'Notifications',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: FutureBuilder<List<dynamic>>(
+                    future: notificationsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return const Center(
+                          child: Text('Unable to load notifications.'),
+                        );
+                      }
+
+                      final notifications = snapshot.data ?? [];
+
+                      if (notifications.isEmpty) {
+                        return const Center(
+                          child: Text('No notifications yet'),
+                        );
+                      }
+
+                      return ListView(
+                        padding: const EdgeInsets.all(12),
+                        children: notifications.map((notification) {
+                          return NotificationItem(
+                            title: notification['title'] ?? 'Notification',
+                            message: notification['message'] ?? '',
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String formatStatus(String status) {
+    return status.replaceAll('_', ' ').toUpperCase();
+  }
+
+  Future<void> openApplication(Map<String, dynamic> application) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ApplicationDetailsPage(
+          apiService: widget.apiService,
+          application: application,
+        ),
+      ),
+    );
+
+    if (result == true && mounted) {
+      reloadApplications();
+    }
+  }
+
+  Future<void> openNewApplication() async {
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NewApplicationPage(apiService: widget.apiService),
+      ),
+    );
+    if (created == true && mounted) reloadApplications();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scholarship Requirement Tracker'),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
-
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: showNotifications,
             icon: const Icon(Icons.notifications_outlined),
             tooltip: 'Notifications',
           ),
@@ -57,216 +168,251 @@ class DashboardPage extends StatelessWidget {
             padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: Text(
-                user['name'] ?? 'Student',
-                style: const TextStyle(
-                  color: Colors.white,
-                ),
+                widget.user['name'] ?? 'Student',
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ),
           IconButton(
             onPressed: () async {
               try {
-                await apiService.logout();
+                await widget.apiService.logout();
 
                 if (!context.mounted) return;
 
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => LoginPage(
-                      apiService: apiService,
-                    ),
+                    builder: (_) => LoginPage(apiService: widget.apiService),
                   ),
                 );
               } catch (e) {
                 if (!context.mounted) return;
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Logout failed: $e'),
-                  ),
-                );
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text('Logout failed: $e')));
               }
             },
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
           ),
         ],
-
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Student Dashboard',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Monitor your scholarship application and requirements.',
-            ),
-            const SizedBox(height: 24),
+      body: FutureBuilder<List<dynamic>>(
+        future: applicationsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: const [
-                SummaryCard(
-                  title: 'Applications',
-                  value: '1',
-                  icon: Icons.description_outlined,
-                ),
-                SummaryCard(
-                  title: 'Submitted Documents',
-                  value: '3',
-                  icon: Icons.upload_file,
-                ),
-                SummaryCard(
-                  title: 'Missing Documents',
-                  value: '2',
-                  icon: Icons.warning_amber,
-                ),
-                SummaryCard(
-                  title: 'Notifications',
-                  value: '2',
-                  icon: Icons.notifications_active_outlined,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 32),
-
-            const Text(
-              'Application Overview',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            Card(
-              child: ListTile(
-                leading: const Icon(
-                  Icons.school,
-                  color: Colors.indigo,
-                ),
-                title: const Text('Scholarship Application'),
-                subtitle: const Text(
-                  'Sample Application • Status: Draft',
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ApplicationDetailsPage(
-                        apiService: apiService,
-                        applicationId: 3,
-                      ),
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 40,
                     ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            const Text(
-              'Required Documents',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            const DocumentItem(
-              name: 'Certificate of Registration',
-              submitted: true,
-              requiredDocumentId: 1,
-            ),
-            const DocumentItem(
-              name: 'Latest Grades',
-              submitted: true,
-              requiredDocumentId: 2,
-            ),
-            const DocumentItem(
-              name: 'Certificate of Indigency',
-              submitted: false,
-              requiredDocumentId: 3,
-            ),
-            const DocumentItem(
-              name: 'Parent or Guardian Information',
-              submitted: false,
-              requiredDocumentId: 4,
-            ),
-
-            const SizedBox(height: 24),
-
-            const Text(
-              'Recent Notifications',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            FutureBuilder<List<dynamic>>(
-              future: apiService.getNotifications(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return const Card(
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                      ),
-                      title: Text('Unable to load notifications'),
-                      subtitle: Text(
-                        'Please check your Laravel server connection.',
-                      ),
+                    const SizedBox(height: 12),
+                    const Text('Unable to load your applications.'),
+                    const SizedBox(height: 8),
+                    Text('${snapshot.error}', textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: reloadApplications,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
                     ),
-                  );
+                  ],
+                ),
+              ),
+            );
+          }
+
+          final applications = snapshot.data ?? [];
+
+          int submittedDocuments = 0;
+          int missingDocuments = 0;
+
+          for (final rawApplication in applications) {
+            final application = Map<String, dynamic>.from(
+              rawApplication as Map,
+            );
+            final documents =
+                application['required_documents'] as List<dynamic>? ?? [];
+
+            for (final rawDocument in documents) {
+              final document = Map<String, dynamic>.from(rawDocument as Map);
+
+              if (document['is_required'] == true) {
+                if (document['uploaded'] == true) {
+                  submittedDocuments++;
+                } else {
+                  missingDocuments++;
                 }
+              }
+            }
+          }
 
-                final notifications = snapshot.data ?? [];
+          return RefreshIndicator(
+            onRefresh: () async {
+              reloadApplications();
+              await applicationsFuture;
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Student Dashboard',
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Monitor your scholarship application and requirements.',
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: openNewApplication,
+                    icon: const Icon(Icons.add),
+                    label: const Text('New Application'),
+                  ),
+                  const SizedBox(height: 20),
 
-                if (notifications.isEmpty) {
-                  return const Card(
-                    child: ListTile(
-                      leading: Icon(Icons.notifications_none),
-                      title: Text('No notifications yet'),
-                    ),
-                  );
-                }
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      SummaryCard(
+                        title: 'Applications',
+                        value: '${applications.length}',
+                        icon: Icons.description_outlined,
+                      ),
+                      SummaryCard(
+                        title: 'Submitted Documents',
+                        value: '$submittedDocuments',
+                        icon: Icons.upload_file,
+                      ),
+                      SummaryCard(
+                        title: 'Missing Documents',
+                        value: '$missingDocuments',
+                        icon: Icons.warning_amber,
+                      ),
+                    ],
+                  ),
 
-                return Column(
-                  children: notifications.map((notification) {
-                    return NotificationItem(
-                      title: notification['title'] ?? 'Notification',
-                      message: notification['message'] ?? '',
-                    );
-                  }).toList(),
-                );
-              },
+                  const SizedBox(height: 32),
+
+                  const Text(
+                    'Application Overview',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (applications.isEmpty)
+                    const Card(
+                      child: ListTile(
+                        leading: Icon(Icons.info_outline),
+                        title: Text('No applications found'),
+                        subtitle: Text(
+                          'Your scholarship applications will appear here.',
+                        ),
+                      ),
+                    )
+                  else
+                    ...applications.map((rawApplication) {
+                      final application = Map<String, dynamic>.from(
+                        rawApplication as Map,
+                      );
+
+                      final program =
+                          application['scholarship_program']
+                              as Map<String, dynamic>?;
+
+                      final programName =
+                          program?['name'] ?? 'Scholarship Application';
+
+                      final status =
+                          application['status']?.toString() ?? 'unknown';
+
+                      return Card(
+                        child: ListTile(
+                          leading: const Icon(
+                            Icons.school,
+                            color: Colors.indigo,
+                          ),
+                          title: Text(programName),
+                          subtitle: Text(
+                            '${application['application_number'] ?? 'No application number'}'
+                            '\nStatus: ${formatStatus(status)}',
+                          ),
+                          isThreeLine: true,
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          onTap: () => openApplication(application),
+                        ),
+                      );
+                    }),
+
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    'Recent Notifications',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+
+                  FutureBuilder<List<dynamic>>(
+                    future: widget.apiService.getNotifications(),
+                    builder: (context, notificationSnapshot) {
+                      if (notificationSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (notificationSnapshot.hasError) {
+                        return const Card(
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.error_outline,
+                              color: Colors.red,
+                            ),
+                            title: Text('Unable to load notifications'),
+                          ),
+                        );
+                      }
+
+                      final notifications = notificationSnapshot.data ?? [];
+
+                      if (notifications.isEmpty) {
+                        return const Card(
+                          child: ListTile(
+                            leading: Icon(Icons.notifications_none),
+                            title: Text('No notifications yet'),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        children: notifications.map((notification) {
+                          return NotificationItem(
+                            title: notification['title'] ?? 'Notification',
+                            message: notification['message'] ?? '',
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -274,60 +420,71 @@ class DashboardPage extends StatelessWidget {
 
 // APPLICATION DETAILS PAGE
 
-
 class ApplicationDetailsPage extends StatefulWidget {
   final ApiService apiService;
-  final int applicationId;
+  final Map<String, dynamic> application;
 
   const ApplicationDetailsPage({
     super.key,
     required this.apiService,
-    required this.applicationId,
+    required this.application,
   });
 
   @override
-  State<ApplicationDetailsPage> createState() =>
-      _ApplicationDetailsPageState();
+  State<ApplicationDetailsPage> createState() => _ApplicationDetailsPageState();
 }
 
-class _ApplicationDetailsPageState
-    extends State<ApplicationDetailsPage> {
-  final Map<int, String> uploadedFiles = {};
+class _ApplicationDetailsPageState extends State<ApplicationDetailsPage> {
   final Map<int, bool> isUploading = {};
-
-  final List<Map<String, dynamic>> requiredDocuments = [
-    {
-      'id': 1,
-      'name': 'Certificate of Registration',
-    },
-    {
-      'id': 2,
-      'name': 'Latest Grades',
-    },
-    {
-      'id': 3,
-      'name': 'Certificate of Indigency',
-    },
-    {
-      'id': 4,
-      'name': 'Parent or Guardian Information',
-    },
-  ];
+  late List<Map<String, dynamic>> requiredDocuments;
 
   bool isSubmitting = false;
 
+  int get applicationId => widget.application['id'] as int;
+
+  String get applicationStatus =>
+      widget.application['status']?.toString() ?? 'unknown';
+
+  bool get canUpload =>
+      applicationStatus == 'draft' || applicationStatus == 'for_correction';
+
+  @override
+  void initState() {
+    super.initState();
+
+    final documents =
+        widget.application['required_documents'] as List<dynamic>? ?? [];
+
+    requiredDocuments = documents
+        .map((document) => Map<String, dynamic>.from(document as Map))
+        .toList();
+  }
+
+  int get requiredCount => requiredDocuments
+      .where((document) => document['is_required'] == true)
+      .length;
+
+  int get completedCount => requiredDocuments
+      .where(
+        (document) =>
+            document['is_required'] == true && document['uploaded'] == true,
+      )
+      .length;
+
+  bool get allRequiredUploaded => completedCount == requiredCount;
+
   Future<void> uploadDocument(
-      int documentId,
-      String fileName,
-      Uint8List fileBytes,
-      ) async {
+    int documentId,
+    String fileName,
+    Uint8List fileBytes,
+  ) async {
     setState(() {
       isUploading[documentId] = true;
     });
 
     try {
       await widget.apiService.uploadDocument(
-        applicationId: widget.applicationId,
+        applicationId: applicationId,
         requiredDocumentId: documentId,
         fileName: fileName,
         fileBytes: fileBytes,
@@ -336,7 +493,17 @@ class _ApplicationDetailsPageState
       if (!mounted) return;
 
       setState(() {
-        uploadedFiles[documentId] = fileName;
+        final index = requiredDocuments.indexWhere(
+          (document) => document['id'] == documentId,
+        );
+
+        if (index != -1) {
+          requiredDocuments[index]['uploaded'] = true;
+          requiredDocuments[index]['document'] = {
+            'original_filename': fileName,
+            'status': 'pending',
+          };
+        }
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -345,9 +512,8 @@ class _ApplicationDetailsPageState
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Upload failed: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -357,11 +523,30 @@ class _ApplicationDetailsPageState
     }
   }
 
+  Future<void> pickDocument(int documentId) async {
+    try {
+      final pickedFile = await FilePicker.pickFile();
+
+      if (pickedFile == null) return;
+
+      final bytes = await pickedFile.readAsBytes();
+
+      if (!mounted) return;
+
+      await uploadDocument(documentId, pickedFile.name, bytes);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Unable to select file: $e')));
+    }
+  }
+
   Future<void> submitApplication() async {
-    if (uploadedFiles.length != requiredDocuments.length) {
+    if (!allRequiredUploaded) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please upload all four required documents.'),
+          content: Text('Please upload all required documents first.'),
         ),
       );
       return;
@@ -373,7 +558,7 @@ class _ApplicationDetailsPageState
 
     try {
       final result = await widget.apiService.submitApplication(
-        applicationId: widget.applicationId,
+        applicationId: applicationId,
       );
 
       if (!mounted) return;
@@ -386,13 +571,12 @@ class _ApplicationDetailsPageState
         ),
       );
 
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Submission failed: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Submission failed: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -404,8 +588,15 @@ class _ApplicationDetailsPageState
 
   @override
   Widget build(BuildContext context) {
-    final completedCount = uploadedFiles.length;
-    final progress = completedCount / requiredDocuments.length;
+    final program =
+        widget.application['scholarship_program'] as Map<String, dynamic>?;
+
+    final programName = program?['name'] ?? 'Scholarship Application';
+
+    final applicationNumber =
+        widget.application['application_number'] ?? 'Not available';
+
+    final progress = requiredCount == 0 ? 0.0 : completedCount / requiredCount;
 
     return Scaffold(
       appBar: AppBar(
@@ -418,12 +609,9 @@ class _ApplicationDetailsPageState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Scholarship Application',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+            Text(
+              programName,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
 
@@ -432,19 +620,25 @@ class _ApplicationDetailsPageState
                 children: [
                   ListTile(
                     title: const Text('Application Number'),
-                    subtitle: const Text('TEST-W14-SUBMISSION-001'),
+                    subtitle: Text(applicationNumber),
                   ),
                   const Divider(height: 1),
-                  const ListTile(
-                    title: Text('Application Status'),
-                    subtitle: Text('Draft'),
-                    trailing: Chip(label: Text('Draft')),
+                  ListTile(
+                    title: const Text('Application Status'),
+                    subtitle: Text(
+                      applicationStatus.replaceAll('_', ' ').toUpperCase(),
+                    ),
+                    trailing: Chip(
+                      label: Text(
+                        applicationStatus.replaceAll('_', ' ').toUpperCase(),
+                      ),
+                    ),
                   ),
                   const Divider(height: 1),
                   ListTile(
                     title: const Text('Required Documents'),
                     subtitle: Text(
-                      '$completedCount of ${requiredDocuments.length} uploaded',
+                      '$completedCount of $requiredCount uploaded',
                     ),
                   ),
                 ],
@@ -455,91 +649,140 @@ class _ApplicationDetailsPageState
 
             const Text(
               'Application Progress',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
 
-            LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-            ),
+            LinearProgressIndicator(value: progress, minHeight: 8),
             const SizedBox(height: 8),
 
             Text(
-              '$completedCount of ${requiredDocuments.length} requirements completed.',
+              '$completedCount of $requiredCount required documents completed.',
             ),
 
             const SizedBox(height: 24),
 
             const Text(
               'Document Checklist',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
 
-            ...requiredDocuments.map((document) {
-              final id = document['id'] as int;
+            if (requiredDocuments.isEmpty)
+              const Card(
+                child: ListTile(title: Text('No document requirements found')),
+              )
+            else
+              ...requiredDocuments.map((document) {
+                final id = document['id'] as int;
+                final uploaded = document['uploaded'] == true;
+                final documentInfo =
+                    document['document'] as Map<String, dynamic>?;
 
-              return DocumentItem(
-                name: document['name'] as String,
-                submitted: uploadedFiles.containsKey(id),
-                requiredDocumentId: id,
-                isUploading: isUploading[id] ?? false,
-                uploadedFileName: uploadedFiles[id],
-                onUpload: (fileName, bytes) {
-                  uploadDocument(id, fileName, bytes);
-                },
-              );
-            }),
+                final fileName = documentInfo?['original_filename']?.toString();
+
+                final isRequired = document['is_required'] == true;
+                final uploading = isUploading[id] ?? false;
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  child: ListTile(
+                    leading: Icon(
+                      uploaded ? Icons.check_circle : Icons.pending_actions,
+                      color: uploaded ? Colors.green : Colors.orange,
+                    ),
+                    title: Text(document['document_name'] ?? 'Document'),
+                    subtitle: Text(
+                      [
+                        isRequired ? 'Required' : 'Optional',
+                        uploading
+                            ? 'Uploading...'
+                            : fileName ?? 'No file uploaded',
+                      ].join('\n'),
+                    ),
+                    isThreeLine: true,
+                    trailing: canUpload
+                        ? ElevatedButton(
+                            onPressed: uploading
+                                ? null
+                                : () => pickDocument(id),
+                            child: uploading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(uploaded ? 'Change' : 'Upload'),
+                          )
+                        : uploaded
+                        ? const Icon(Icons.check)
+                        : const Icon(Icons.lock_outline),
+                  ),
+                );
+              }),
 
             const SizedBox(height: 24),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed:
-                completedCount == requiredDocuments.length &&
-                    !isSubmitting
-                    ? submitApplication
-                    : null,
-                icon: isSubmitting
-                    ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
+            if (['draft', 'for_correction'].contains(applicationStatus))
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: allRequiredUploaded && !isSubmitting
+                      ? submitApplication
+                      : null,
+                  icon: isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.send),
+                  label: Text(
+                    isSubmitting ? 'Submitting...' : 'Submit Application',
                   ),
-                )
-                    : const Icon(Icons.send),
-                label: Text(
-                  isSubmitting
-                      ? 'Submitting...'
-                      : 'Submit Application',
                 ),
               ),
-            ),
 
-            const SizedBox(height: 8),
-
-            const Center(
-              child: Text(
-                'Upload all required documents before submission.',
-                textAlign: TextAlign.center,
+            if (applicationStatus == 'for_correction')
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.info_outline, color: Colors.orange),
+                  title: Text('Correction required'),
+                  subtitle: Text(
+                    'Upload the corrected documents as instructed by the reviewer.',
+                  ),
+                ),
               ),
-            ),
+
+            if (!canUpload)
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.lock_outline),
+                  title: Text('Document uploads are unavailable'),
+                  subtitle: Text(
+                    'This application is no longer in an uploadable status.',
+                  ),
+                ),
+              ),
+
+            if (applicationStatus == 'draft')
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Upload all required documents before submission.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 }
-
 
 // SUMMARY CARD
 
@@ -565,11 +808,7 @@ class SummaryCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                icon,
-                size: 30,
-                color: Colors.indigo,
-              ),
+              Icon(icon, size: 30, color: Colors.indigo),
               const SizedBox(height: 12),
               Text(
                 value,
@@ -587,109 +826,6 @@ class SummaryCard extends StatelessWidget {
   }
 }
 
-// DOCUMENT ITEM
-
-class DocumentItem extends StatefulWidget {
-final String name;
-final bool submitted;
-final int requiredDocumentId;
-final bool isUploading;
-final String? uploadedFileName;
-final Function(String fileName, Uint8List bytes)? onUpload;
-
-const DocumentItem({
-super.key,
-required this.name,
-required this.submitted,
-required this.requiredDocumentId,
-this.isUploading = false,
-this.uploadedFileName,
-this.onUpload,
-});
-
-@override
-State<DocumentItem> createState() => _DocumentItemState();
-}
-
-class _DocumentItemState extends State<DocumentItem> {
-  String? selectedFileName;
-  Uint8List? selectedFileBytes;
-  bool isPicking = false;
-
-  Future<void> pickDocument() async {
-    setState(() {
-      isPicking = true;
-    });
-
-    try {
-      final pickedFile = await FilePicker.pickFile();
-
-      if (pickedFile != null) {
-        final bytes = await pickedFile.readAsBytes();
-
-        if (!mounted) return;
-
-        setState(() {
-          selectedFileName = pickedFile.name;
-          selectedFileBytes = bytes;
-        });
-
-        widget.onUpload?.call(pickedFile.name, bytes);
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to select file: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          isPicking = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final fileName = widget.uploadedFileName ?? selectedFileName;
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: ListTile(
-        leading: Icon(
-          widget.submitted
-              ? Icons.check_circle
-              : Icons.pending_actions,
-          color: widget.submitted ? Colors.green : Colors.orange,
-        ),
-        title: Text(widget.name),
-        subtitle: Text(
-          widget.isUploading
-              ? 'Uploading...'
-              : fileName ?? 'No file uploaded',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: ElevatedButton(
-          onPressed: widget.isUploading || isPicking
-              ? null
-              : pickDocument,
-          child: widget.isUploading || isPicking
-              ? const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-              : Text(fileName != null ? 'Change' : 'Upload'),
-        ),
-      ),
-    );
-  }
-}
-
-
 // NOTIFICATION ITEM
 
 class NotificationItem extends StatelessWidget {
@@ -706,10 +842,7 @@ class NotificationItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        leading: const Icon(
-          Icons.notifications_outlined,
-          color: Colors.indigo,
-        ),
+        leading: const Icon(Icons.notifications_outlined, color: Colors.indigo),
         title: Text(title),
         subtitle: Text(message),
       ),

@@ -1,0 +1,16 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/login",
+    "status": 422,
+    "content_type": "application/json",
+    "body": "{\"message\":\"The email field is required. (and 1 more error)\",\"errors\":{\"email\":[\"The email field is required.\"],\"password\":[\"The password field is required.\"]}}"
+  },
+  {
+    "method": "POST",
+    "path": "/api/register",
+    "status": 422,
+    "content_type": "application/json",
+    "body": "{\"message\":\"The name field is required. (and 2 more errors)\",\"errors\":{\"name\":[\"The name field is required.\"],\"email\":[\"The email field is required.\"],\"password\":[\"The password field is required.\"]}}"
+  }
+]

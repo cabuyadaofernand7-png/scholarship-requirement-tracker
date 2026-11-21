@@ -1,0 +1,40 @@
+﻿
+  GET|HEAD   api/applications ............................................................................................................. Api\StudentApplicationController@index
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  POST       api/applications/{application}/assign-reviewer .............................................................................. Api\ReviewerAssignmentController@assign
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  POST       api/applications/{application}/check-missing-documents .................................................................. Api\MissingDocumentReminderController@check
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  POST       api/applications/{application}/documents ................................................................................... Api\ApplicationDocumentController@upload
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  PATCH      api/applications/{application}/status ........................................................................................ Api\ApplicationStatusController@update
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  POST       api/applications/{application}/submit .................................................................................... Api\ApplicationSubmissionController@submit
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  POST       api/automation/check-deadlines .............................................................................................. Api\ScholarshipDeadlineController@check
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  GET|HEAD   api/documents/{document}/download ................................................................................ Api\ApplicationDocumentDownloadController@download
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  POST       api/login .................................................................................................................................. Api\AuthController@login
+             Γçé api
+  POST       api/logout ................................................................................................................................ Api\AuthController@logout
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  GET|HEAD   api/notifications .................................................................................................................. Api\NotificationController@index
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+  POST       api/register ............................................................................................................................ Api\AuthController@register
+             Γçé api
+  GET|HEAD   api/user .......................................................................................................................................... routes/api.php:69
+             Γçé api
+             Γçé Illuminate\Auth\Middleware\Authenticate:sanctum
+
+                                                                                                                                                               Showing [13] routes

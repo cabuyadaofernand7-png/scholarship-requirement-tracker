@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-11-22",
+  "environment": "local Laravel API",
+  "scenario": "UAT-02 invalid credentials",
+  "method": "POST",
+  "path": "/api/login",
+  "http_status": 401,
+  "content_type": [
+    "application/json"
+  ],
+  "response": "Invalid email or password.",
+  "token_returned": false
+}

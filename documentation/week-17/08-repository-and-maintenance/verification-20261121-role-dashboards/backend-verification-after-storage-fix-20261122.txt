@@ -1,0 +1,7 @@
+Week 17 final backend regression rerun
+Date: 22 November 2026 (Asia/Manila)
+Working tree: local Week 17 working build; no commit created
+Command: php artisan test --no-ansi (run from backend/)
+Result: passed; 70 tests, 179 assertions, 0 failures
+Elapsed: 2.607 seconds (test runner result)
+Database: PHPUnit SQLite in-memory configuration.

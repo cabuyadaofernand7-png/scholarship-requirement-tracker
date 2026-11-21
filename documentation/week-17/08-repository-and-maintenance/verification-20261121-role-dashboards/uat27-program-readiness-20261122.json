@@ -1,0 +1,14 @@
+{
+  "checked_at": "2026-11-21T16:53:24+00:00",
+  "scenario_preparation_for": "UAT-27",
+  "program_name": "W17 UAT Controlled Open Program",
+  "is_active": true,
+  "application_deadline": "2026-11-27",
+  "required_documents": [
+    {"document_name": "Certificate of Registration", "is_required": true, "allowed_file_types": "pdf,jpg,jpeg,png"},
+    {"document_name": "Certificate of Grades", "is_required": true, "allowed_file_types": "pdf,jpg,jpeg,png"},
+    {"document_name": "Proof of Income", "is_required": true, "allowed_file_types": "pdf,jpg,jpeg,png"},
+    {"document_name": "Valid Student ID", "is_required": true, "allowed_file_types": "pdf,jpg,jpeg,png"}
+  ],
+  "student_already_applied": false
+}

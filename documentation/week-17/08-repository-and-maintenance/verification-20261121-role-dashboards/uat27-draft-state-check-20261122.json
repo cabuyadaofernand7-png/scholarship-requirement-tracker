@@ -1,0 +1,12 @@
+{
+  "checked_at": "2026-11-22",
+  "scenario": "UAT-27",
+  "program_name": "W17 UAT Controlled Open Program",
+  "application_exists": true,
+  "owned_by_controlled_student": true,
+  "application_status": "draft",
+  "required_document_count": 4,
+  "uploaded_document_count": 0,
+  "check_type": "read-only isolated database query",
+  "identifiers_and_credentials_omitted": true
+}

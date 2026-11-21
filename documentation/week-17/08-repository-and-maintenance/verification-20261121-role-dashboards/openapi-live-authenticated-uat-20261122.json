@@ -1,0 +1,93 @@
+{
+  "scope": "Authenticated API UAT response and state checks against the local isolated database",
+  "results": {
+    "UAT-08": {
+      "request": "POST /api/applications/{application}/submit as a different student",
+      "http_status": 403,
+      "message": "You are not authorized to submit this application.",
+      "target_application_status_before": "submitted",
+      "target_application_status_after": "submitted"
+    },
+    "UAT-10": {
+      "request": "GET /api/notifications as another controlled student",
+      "http_status": 200,
+      "requesting_student_notification_count": 0,
+      "target_student_notification_count": 5,
+      "target_notifications_leaked": false
+    },
+    "UAT-12": {
+      "request": "POST /api/applications/{application}/assign-reviewer as a student",
+      "http_status": 403,
+      "message": "Only staff members can assign reviewers.",
+      "active_assignment_count_before": 1,
+      "active_assignment_count_after": 1
+    },
+    "UAT-13": {
+      "request": "GET /api/documents/{document}/download as the assigned reviewer",
+      "http_status": 200,
+      "content_type": "application/pdf",
+      "download_bytes": 26672
+    },
+    "UAT-14": {
+      "request": "GET /api/documents/{document}/download as a different, unassigned reviewer",
+      "http_status": 403,
+      "message": "This application is not assigned to you."
+    },
+    "UAT-16": {
+      "request": "PATCH /api/applications/{application}/status as assigned reviewer with status=approved from submitted",
+      "http_status": 409,
+      "message": "Invalid status transition. Reviewers must move submitted applications to under_review before making a review decision.",
+      "application_status_before": "submitted",
+      "application_status_after": "submitted"
+    },
+    "UAT-18": {
+      "request": "POST /api/applications/{application}/check-missing-documents twice on a temporary draft with one missing required document",
+      "http_status_first": 200,
+      "first_reminder_created": true,
+      "http_status_second": 200,
+      "second_reminder_created": false,
+      "active_reminder_count_after_two_checks": 1,
+      "missing_document_count": 1,
+      "temporary_student_program_and_token_removed": true
+    },
+    "UAT-05": {
+      "request": "POST /api/applications/{application}/documents with unsupported .exe file",
+      "http_status": 422,
+      "validation_rejected": true,
+      "application_document_count_after_rejection": 0
+    },
+    "UAT-06": {
+      "request": "Create a controlled draft, upload four permitted PDFs, then submit",
+      "draft_create_http_status": 201,
+      "upload_http_statuses": [
+        201,
+        201,
+        201,
+        201
+      ],
+      "submitted_document_count": 4,
+      "private_files_present_before_cleanup": 4,
+      "submit_http_status": 200,
+      "application_status_after_submit": "submitted",
+      "status_history_transition": [
+        "draft",
+        "submitted"
+      ],
+      "history_reason": "Application submitted."
+    },
+    "UAT-07": {
+      "request": "POST /api/applications/{application}/submit on a draft with four missing required documents",
+      "http_status": 422,
+      "missing_document_count": 4,
+      "application_status_after_rejection": "draft"
+    }
+  },
+  "test_data_handling": {
+    "temporary_accounts_created_for_isolation_checks": true,
+    "temporary_accounts_removed_after_checks": true,
+    "temporary_sanctum_tokens_removed_after_checks": true,
+    "credential_values_or_tokens_recorded": false,
+    "temporary_reminder_student_program_and_token_removed": true,
+    "temporary_submission_user_program_applications_tokens_and_uploaded_files_removed": true
+  }
+}

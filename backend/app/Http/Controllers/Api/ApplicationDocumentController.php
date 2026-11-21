@@ -8,26 +8,35 @@ use App\Models\ApplicationDocument;
 use App\Models\RequiredDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\FilesystemException;
 
 class ApplicationDocumentController extends Controller
 {
-public function upload(Request $request, Application $application)
-{
-    // Only students can upload their own application documents.
-    $user = $request->user();
+    public function upload(Request $request, Application $application)
+    {
+        // Only students can upload their own application documents.
+        $user = $request->user();
 
-    if (
-        !$user->role ||
-        $user->role->name !== 'student' ||
-        (int) $application->user_id !== (int) $user->id
-    ) {
-        return response()->json([
-            'success' => false,
-            'message' => 'You are not authorized to upload documents for this application.',
-        ], 403);
-    }
+        if (
+            ! $user->role ||
+            $user->role->name !== 'student' ||
+            (int) $application->user_id !== (int) $user->id
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to upload documents for this application.',
+            ], 403);
+        }
 
-    // Validate the required document ID and uploaded file.
+        // Students may upload documents only while preparing or correcting an application.
+        if (! in_array($application->status, ['draft', 'for_correction'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Documents can only be uploaded for draft applications or applications requiring correction.',
+            ], 409);
+        }
+
+        // Validate the required document ID and uploaded file.
         $validated = $request->validate([
             'required_document_id' => [
                 'required',
@@ -67,8 +76,8 @@ public function upload(Request $request, Application $application)
             'file' => [
                 'required',
                 'file',
-                'mimes:' . implode(',', $allowedExtensions),
-                'max:' . $requiredDocument->max_file_size_kb,
+                'mimes:'.implode(',', $allowedExtensions),
+                'max:'.$requiredDocument->max_file_size_kb,
             ],
         ]);
 
@@ -84,13 +93,22 @@ public function upload(Request $request, Application $application)
         )->first();
 
         // Store the new file.
-        $filePath = $file->store(
-            'application-documents',
-            'local'
-        );
+        try {
+            $filePath = $file->store(
+                'application-documents',
+                'local'
+            );
+        } catch (FilesystemException $exception) {
+            report($exception);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Document storage is temporarily unavailable. Please try again later.',
+            ], 503);
+        }
 
         // Stop if the file could not be stored.
-        if (!$filePath) {
+        if (! $filePath) {
             return response()->json([
                 'success' => false,
                 'message' => 'Document storage is temporarily unavailable. Please try again later.',

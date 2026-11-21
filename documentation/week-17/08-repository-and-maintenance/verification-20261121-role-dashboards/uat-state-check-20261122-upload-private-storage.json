@@ -1,0 +1,12 @@
+{
+  "observed_at": "2026-11-21T16:32:15+00:00",
+  "scenario": "UAT-04",
+  "document_found": true,
+  "original_filename": "week13_dummy_document (1).pdf",
+  "mime_type": "application/pdf",
+  "file_size": 26672,
+  "document_status": "pending",
+  "private_local_storage_file_exists": true,
+  "application_status": "submitted",
+  "document_count_for_application": 4
+}

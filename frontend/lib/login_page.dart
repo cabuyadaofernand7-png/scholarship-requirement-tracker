@@ -1,15 +1,14 @@
-
 import 'package:flutter/material.dart';
+
 import 'services/api_service.dart';
 import 'main.dart';
+import 'staff_dashboard_page.dart';
+import 'reviewer_dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   final ApiService apiService;
 
-  const LoginPage({
-    super.key,
-    required this.apiService,
-  });
+  const LoginPage({super.key, required this.apiService});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -40,12 +39,23 @@ class _LoginPageState extends State<LoginPage> {
       final user = result['user'];
       final role = user['role']?['name'];
 
-      if (role != 'student') {
-        await widget.apiService.logout();
+      final Widget? destination = switch (role) {
+        'student' => DashboardPage(apiService: widget.apiService, user: user),
+        'staff' => StaffDashboardPage(
+          apiService: widget.apiService,
+          user: user,
+        ),
+        'reviewer' => ReviewerDashboardPage(
+          apiService: widget.apiService,
+          user: user,
+        ),
+        _ => null,
+      };
 
+      if (destination == null) {
+        await widget.apiService.logout();
         setState(() {
-          errorMessage =
-          'This dashboard is currently available to student accounts only.';
+          errorMessage = 'This account role does not have a dashboard.';
           isLoading = false;
         });
         return;
@@ -53,12 +63,7 @@ class _LoginPageState extends State<LoginPage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => DashboardPage(
-            apiService: widget.apiService,
-            user: user,
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => destination),
       );
     } catch (e) {
       if (!mounted) return;
@@ -96,11 +101,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.school,
-                      size: 55,
-                      color: Colors.indigo,
-                    ),
+                    const Icon(Icons.school, size: 55, color: Colors.indigo),
                     const SizedBox(height: 16),
                     const Text(
                       'Scholarship Requirement Tracker',
@@ -111,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text('Sign in to your student account'),
+                    const Text('Sign in to your account'),
                     const SizedBox(height: 28),
 
                     TextField(

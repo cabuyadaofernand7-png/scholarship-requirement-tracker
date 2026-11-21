@@ -1,0 +1,66 @@
+[
+  {
+    "Path": "/api/user",
+    "Status": 401,
+    "ContentType": [
+      "application/json"
+    ],
+    "Body": "{\"message\":\"Unauthenticated.\"}"
+  },
+  {
+    "Path": "/api/applications",
+    "Status": 401,
+    "ContentType": [
+      "application/json"
+    ],
+    "Body": "{\"message\":\"Unauthenticated.\"}"
+  },
+  {
+    "Path": "/api/scholarship-programs",
+    "Status": 401,
+    "ContentType": [
+      "application/json"
+    ],
+    "Body": "{\"message\":\"Unauthenticated.\"}"
+  },
+  {
+    "Path": "/api/staff/applications",
+    "Status": 401,
+    "ContentType": [
+      "application/json"
+    ],
+    "Body": "{\"message\":\"Unauthenticated.\"}"
+  },
+  {
+    "Path": "/api/staff/reviewers",
+    "Status": 401,
+    "ContentType": [
+      "application/json"
+    ],
+    "Body": "{\"message\":\"Unauthenticated.\"}"
+  },
+  {
+    "Path": "/api/reviewer/applications",
+    "Status": 401,
+    "ContentType": [
+      "application/json"
+    ],
+    "Body": "{\"message\":\"Unauthenticated.\"}"
+  },
+  {
+    "Path": "/api/notifications",
+    "Status": 401,
+    "ContentType": [
+      "application/json"
+    ],
+    "Body": "{\"message\":\"Unauthenticated.\"}"
+  },
+  {
+    "Path": "/api/documents/999999/download",
+    "Status": 401,
+    "ContentType": [
+      "application/json"
+    ],
+    "Body": "{\"message\":\"Unauthenticated.\"}"
+  }
+]

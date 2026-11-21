@@ -1,0 +1,29 @@
+{
+    "observed_at": "2026-11-21T15:49:31+00:00",
+    "application_status": "for_correction",
+    "assignment_count": 1,
+    "review_assignment_notification_count": 1,
+    "assignments": [
+        {
+            "reviewer_id": 3,
+            "status": "pending"
+        }
+    ],
+    "status_history": [
+        {
+            "old_status": "draft",
+            "new_status": "submitted",
+            "reason": "Application submitted."
+        },
+        {
+            "old_status": "submitted",
+            "new_status": "under_review",
+            "reason": null
+        },
+        {
+            "old_status": "under_review",
+            "new_status": "for_correction",
+            "reason": null
+        }
+    ]
+}

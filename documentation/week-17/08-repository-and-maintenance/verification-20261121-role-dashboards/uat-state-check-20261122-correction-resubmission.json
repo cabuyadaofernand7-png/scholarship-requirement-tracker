@@ -1,0 +1,61 @@
+{
+    "observed_at": "2026-11-21T16:18:34+00:00",
+    "application_number": "TEST-W14-SUBMISSION-001",
+    "application_status": "submitted",
+    "documents": [
+        {
+            "required_document_id": 1,
+            "original_filename": "week13_dummy_document (1).pdf",
+            "status": "pending",
+            "file_size": 26672,
+            "submitted_at": "2026-11-21T16:15:00.000000Z"
+        },
+        {
+            "required_document_id": 2,
+            "original_filename": "VirtualBox_kali-linux-2026.1-virtualbox-amd64_12_11_2026_10_10_39.png",
+            "status": "pending",
+            "file_size": 345921,
+            "submitted_at": "2026-11-21T07:09:10.000000Z"
+        },
+        {
+            "required_document_id": 3,
+            "original_filename": "VirtualBox_kali-linux-2026.1-virtualbox-amd64_12_11_2026_10_10_39.png",
+            "status": "pending",
+            "file_size": 345921,
+            "submitted_at": "2026-11-21T07:09:15.000000Z"
+        },
+        {
+            "required_document_id": 4,
+            "original_filename": "51a84785-9fc1-447f-9b31-78d757cff277.jpg",
+            "status": "pending",
+            "file_size": 192245,
+            "submitted_at": "2026-11-21T07:09:19.000000Z"
+        }
+    ],
+    "status_history": [
+        {
+            "old_status": "draft",
+            "new_status": "submitted",
+            "reason": "Application submitted.",
+            "created_at": "2026-11-02T12:32:15.000000Z"
+        },
+        {
+            "old_status": "submitted",
+            "new_status": "under_review",
+            "reason": null,
+            "created_at": "2026-11-21T15:47:14.000000Z"
+        },
+        {
+            "old_status": "under_review",
+            "new_status": "for_correction",
+            "reason": null,
+            "created_at": "2026-11-21T15:48:22.000000Z"
+        },
+        {
+            "old_status": "for_correction",
+            "new_status": "submitted",
+            "reason": "Corrected application resubmitted.",
+            "created_at": "2026-11-21T16:17:58.000000Z"
+        }
+    ]
+}

@@ -3,21 +3,25 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\UnableToCreateDirectory;
 use Tests\TestCase;
-use Illuminate\Filesystem\FilesystemAdapter;
 
 class ApplicationDocumentUploadTest extends TestCase
 {
     use RefreshDatabase;
 
     private User $student;
+
     private int $programId;
+
     private int $applicationId;
+
     private int $requiredDocumentId;
 
     protected function setUp(): void
@@ -238,36 +242,131 @@ class ApplicationDocumentUploadTest extends TestCase
         ]);
     }
 
-public function test_upload_returns_service_unavailable_when_storage_fails(): void
-{
-    $disk = \Mockery::mock(FilesystemAdapter::class);
+    public function test_upload_returns_service_unavailable_when_storage_fails(): void
+    {
+        $disk = \Mockery::mock(FilesystemAdapter::class);
 
-    // Simulate a failed file-storage operation.
-    $disk->shouldReceive('putFileAs')
-        ->once()
-        ->andReturn(false);
+        // Simulate a failed file-storage operation.
+        $disk->shouldReceive('putFileAs')
+            ->once()
+            ->andReturn(false);
 
-    Storage::shouldReceive('disk')
-        ->with('local')
-        ->andReturn($disk);
+        Storage::shouldReceive('disk')
+            ->with('local')
+            ->andReturn($disk);
 
-    $file = UploadedFile::fake()->create(
-        'certificate.pdf',
-        100,
-        'application/pdf'
-    );
+        $file = UploadedFile::fake()->create(
+            'certificate.pdf',
+            100,
+            'application/pdf'
+        );
 
-    $response = $this->uploadDocument(
-        $this->requiredDocumentId,
-        $file
-    );
+        $response = $this->uploadDocument(
+            $this->requiredDocumentId,
+            $file
+        );
 
-    $response->assertStatus(503);
+        $response->assertStatus(503);
 
-    $this->assertDatabaseMissing('application_documents', [
-        'application_id' => $this->applicationId,
-        'required_document_id' => $this->requiredDocumentId,
-    ]);
-}
+        $this->assertDatabaseMissing('application_documents', [
+            'application_id' => $this->applicationId,
+            'required_document_id' => $this->requiredDocumentId,
+        ]);
+    }
 
+    public function test_upload_returns_generic_service_unavailable_when_storage_throws(): void
+    {
+        $disk = \Mockery::mock(FilesystemAdapter::class);
+
+        $disk->shouldReceive('putFileAs')
+            ->once()
+            ->andThrow(UnableToCreateDirectory::atLocation('private'));
+
+        Storage::shouldReceive('disk')
+            ->with('local')
+            ->andReturn($disk);
+
+        $file = UploadedFile::fake()->create(
+            'certificate.pdf',
+            100,
+            'application/pdf'
+        );
+
+        $response = $this->uploadDocument(
+            $this->requiredDocumentId,
+            $file
+        );
+
+        $response->assertServiceUnavailable()->assertExactJson([
+            'success' => false,
+            'message' => 'Document storage is temporarily unavailable. Please try again later.',
+        ]);
+
+        $this->assertDatabaseMissing('application_documents', [
+            'application_id' => $this->applicationId,
+            'required_document_id' => $this->requiredDocumentId,
+        ]);
+    }
+
+    public function test_student_can_upload_a_document_for_correction(): void
+    {
+        DB::table('applications')
+            ->where('id', $this->applicationId)
+            ->update(['status' => 'for_correction']);
+
+        $file = UploadedFile::fake()->create(
+            'corrected-certificate.pdf',
+            100,
+            'application/pdf'
+        );
+
+        $response = $this->uploadDocument(
+            $this->requiredDocumentId,
+            $file
+        );
+
+        $response->assertCreated();
+
+        $this->assertDatabaseHas('application_documents', [
+            'application_id' => $this->applicationId,
+            'required_document_id' => $this->requiredDocumentId,
+            'original_filename' => 'corrected-certificate.pdf',
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_student_cannot_upload_documents_after_submission_or_review(): void
+    {
+        $blockedStatuses = [
+            'submitted',
+            'under_review',
+            'incomplete',
+            'approved',
+            'rejected',
+        ];
+
+        foreach ($blockedStatuses as $status) {
+            DB::table('applications')
+                ->where('id', $this->applicationId)
+                ->update(['status' => $status]);
+
+            $file = UploadedFile::fake()->create(
+                'certificate-'.$status.'.pdf',
+                100,
+                'application/pdf'
+            );
+
+            $response = $this->uploadDocument(
+                $this->requiredDocumentId,
+                $file
+            );
+
+            $response->assertStatus(409);
+        }
+
+        $this->assertDatabaseMissing('application_documents', [
+            'application_id' => $this->applicationId,
+            'required_document_id' => $this->requiredDocumentId,
+        ]);
+    }
 }
